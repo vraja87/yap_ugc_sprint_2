@@ -1,0 +1,93 @@
+@startuml
+
+skinparam defaultTextAlignment center
+
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+
+!includeurl ICONURL/common.puml
+!includeurl ICONURL/devicons2/postgresql.puml
+!includeurl ICONURL/devicons2/redis.puml
+!includeurl ICONURL/devicons2/django.puml
+!includeurl ICONURL/devicons2/python.puml
+
+title Praktix movie app
+
+package Auth {
+    component AuthBackend
+    database AuthDB
+    database AuthRedis
+}
+
+package "Async API" {
+    component AsyncBackend
+    component Elasticsearch
+    database AsyncRedis
+}
+
+package "Movies Database" {
+    component AdminPanel
+    database MoviesDB
+}
+
+package "UGC" {
+    package UGCBackend {
+        component UGCBackendAPI
+        component UGCBufferService
+    }
+    queue Kafka
+    component EventsETL
+    database ClickHouse
+}
+
+component ClientApp
+component Nginx
+component ContentETL
+
+'Align
+ClientApp -> Nginx : HTTP requests
+
+'Proxy
+Nginx --> AuthBackend
+Nginx --> AsyncBackend
+Nginx --> AdminPanel
+Nginx --> UGCBackendAPI
+
+'Internal Auth
+AuthBackend --> AuthDB : Read
+AuthBackend --> AuthRedis : Utilizes
+
+'Internal Async
+AsyncBackend --> AsyncRedis : Utilizes
+AsyncBackend --> Elasticsearch : Read
+
+'Internal Admin
+AdminPanel --> MoviesDB : Manages content
+AdminPanel -> AuthBackend
+
+ContentETL --> Elasticsearch : Writes to
+MoviesDB -> ContentETL : Read from
+
+'Internal UGC
+UGCBackend -[hidden]-> Kafka
+UGCBackendAPI --> UGCBufferService
+UGCBufferService -r-> Kafka
+Kafka -u-> EventsETL
+EventsETL -l-> ClickHouse
+
+'Order
+Auth -[hidden]-> "Movies Database"
+"Movies Database" -[hidden]> ContentETL
+ContentETL -[hidden]> "Movies Database"
+Auth -[hidden]> "UGC"
+
+'Style
+DEV2_POSTGRESQL(AuthDB, AuthDB, database)
+DEV2_POSTGRESQL(MoviesDB, MoviesDB, database)
+DEV2_REDIS(AuthRedis, AuthRedis, database)
+DEV2_REDIS(AsyncRedis, AsyncRedis, database)
+DEV2_PYTHON(AdminPanel, AdminPanel, component)
+DEV2_PYTHON(AsyncBackend, AsyncBackend, component)
+DEV2_PYTHON(AuthBackend, AuthBackend, component)
+DEV2_PYTHON(UGCBackendAPI, UGCBackend, component)
+
+@enduml

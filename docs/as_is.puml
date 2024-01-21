@@ -1,0 +1,59 @@
+@startuml
+allowmixing
+skinparam componentStyle uml2
+
+title Praktix movie app
+
+package "Client Application" {
+    component WebApp
+    component MobileApp
+}
+
+package "Nginx" {
+    component Nginx
+}
+
+package "Services" {
+    package "Auth Service (FastAPI)" {
+        component AuthService
+        database PostgreSQLAuth
+        stack RedisAuth
+    }
+
+    package "Async API (FastAPI)" {
+        component AsyncAPI
+        stack RedisCache
+    }
+
+    package "Full-Text Search Service" {
+        component ETLProcess
+        database Elasticsearch
+    }
+
+    package "Admin Panel (Django)" {
+        component AdminPanel
+        database PostgreSQLAdmin
+    }
+
+}
+
+Nginx --> AuthService
+Nginx <--> AsyncAPI
+
+WebApp -> Nginx : HTTP requests
+MobileApp -> Nginx : HTTP requests
+
+AuthService --> PostgreSQLAuth
+AuthService --> RedisAuth
+
+AsyncAPI --> RedisCache : Utilizes
+AsyncAPI --> Elasticsearch
+
+ETLProcess --> Elasticsearch : Writes to
+PostgreSQLAdmin -> ETLProcess : Read from
+Elasticsearch -> AsyncAPI : Read
+
+AdminPanel --> PostgreSQLAdmin : Manages content
+AdminPanel -> AuthService : Authentication
+
+@enduml

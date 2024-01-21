@@ -1,0 +1,6 @@
+pydantic==2.5.3
+kafka-python==2.0.2
+clickhouse-driver==0.2.6
+backoff==2.2.1
+redis==5.0.1
+pydantic-settings==2.1.0

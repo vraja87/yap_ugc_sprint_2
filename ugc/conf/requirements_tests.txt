@@ -1,0 +1,18 @@
+uvicorn[standard]==0.23.2
+gunicorn==21.2.0
+fastapi==0.105.0
+clickhouse-driver==0.2.6
+kafka-python==2.0.2
+orjson==3.9.10
+pydantic==1.10.13
+uvloop==0.19.0 ; sys_platform != "win32" and implementation_name == "cpython"
+requests==2.31.0
+
+# jaeger
+opentelemetry-api==1.21.0
+opentelemetry-sdk==1.21.0
+opentelemetry-exporter-jaeger==1.21.0
+opentelemetry-instrumentation-fastapi==0.42b0
+
+# oauth
+async_fastapi_jwt_auth==0.5.1

@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  vertica:
+#    privileged: true
+#    environment:
+#      APP_DB_USER: "dbadmin"
+#      VERTICA_MEMDEBUG: 4
+#      TZ: "Europe/Prague"
+#    container_name: vertica-ce
+    image: jbfavre/vertica:latest
+    ports:
+      - "5435:5433"
+      - "5444:5444"
+#    platform: linux/amd64
+#    deploy:
+#      mode: global
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:23
+    container_name: clickhouse
+    hostname: clickhouse
+    restart: always
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+

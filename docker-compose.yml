@@ -1,0 +1,162 @@
+version: '3.5'
+
+x-base: &base
+  restart: unless-stopped
+  env_file:
+    - .env
+
+x-kafka: &kafka
+  <<: *base
+  image: docker.io/bitnami/kafka:3.6.1-debian-11-r1
+
+
+x-clickhouse-base: &clickhouse-base
+  <<: *base
+  image: clickhouse/clickhouse-server:23
+  healthcheck:
+    test: wget --no-verbose --tries=1 --spider http://localhost:8123/?query=SELECT%201 || exit 1
+  depends_on:
+    - zookeeper
+
+
+services:
+  zookeeper:
+    <<: *base
+    image: zookeeper:3.9.1
+    expose:
+      - 2181
+      - 2888
+      - 3888
+      - 8080
+
+  clickhouse-node1:
+    <<: *clickhouse-base
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - ./clickhouse/data/node1:/etc/clickhouse-server
+
+  clickhouse-node2:
+    <<: *clickhouse-base
+    ports:
+      - "8124:8123"
+      - "9001:9000"
+    volumes:
+      - ./clickhouse/data/node2:/etc/clickhouse-server
+
+  kafka-node1:
+    <<:
+      - *kafka
+    ports:
+      - "9094:9094"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --topic views --describe"]
+    environment:
+      # KRaft settings
+      KAFKA_CFG_NODE_ID: "0"
+      # Listeners
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094"
+      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-node1:9092,EXTERNAL://localhost:9094"
+    volumes:
+      - cluster_kafka_node1:/bitnami/kafka
+
+  kafka-node2:
+    <<:
+      - *kafka
+    ports:
+      - "9095:9095"
+    environment:
+      # KRaft settings
+      KAFKA_CFG_NODE_ID: "1"
+      # Listeners
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9095"
+      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-node2:9092,EXTERNAL://localhost:9095"
+    volumes:
+      - cluster_kafka_node2:/bitnami/kafka
+
+  kafka-node3:
+    <<:
+      - *kafka
+    ports:
+      - "9096:9096"
+    environment:
+      # KRaft settings
+      KAFKA_CFG_NODE_ID: "2"
+      # Listeners
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9096"
+      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-node3:9092,EXTERNAL://localhost:9096"
+    volumes:
+      - cluster_kafka_node3:/bitnami/kafka
+
+  kafka-ui:
+    <<: *base
+    image: provectuslabs/kafka-ui:v0.7.1
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_BOOTSTRAP_SERVERS: "${KAFKA_BOOTSTRAP_SERVERS}"
+      KAFKA_CLUSTERS_0_NAME: "kraft"
+    depends_on:
+      - kafka-node1
+      - kafka-node2
+      - kafka-node3
+
+  etl:
+    <<: *base
+    build:
+      args:
+        APP_DIR: ${APP_DIR}
+      context: ./etl
+      dockerfile: ./docker/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    <<: *base
+    image: redis:7.2.4-alpine
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - redis_data:/data
+
+  ugc:
+    <<: *base
+    image: ugc:latest
+    build:
+      dockerfile: ./docker/Dockerfile
+      context: ./ugc
+      args:
+        DOCKER_BUILDKIT: 1
+        APP_DIR: ${APP_DIR}
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/api/v1/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    depends_on:
+      kafka-node1:
+        condition: service_healthy
+
+  jaeger:
+    <<: *base
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "6831:6831"
+      - "16686:16686"
+    environment:
+      - LOG_LEVEL=debug
+
+volumes:
+  cluster_clickhouse_node1:
+  cluster_clickhouse_node2:
+  cluster_kafka_node1:
+  cluster_kafka_node2:
+  cluster_kafka_node3:
+  redis_data:
