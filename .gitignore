@@ -137,3 +137,4 @@ dmypy.json
 .idea
 *.uuid
 /.init_completed
+elastic/data
