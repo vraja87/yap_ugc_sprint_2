@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   logstash:
-    image: logstash:8.10.2
+    image: logstash:8.12.0
     environment:
       # Так как сейчас вы хотите запустить logstash без Elasticsearch, необходимо отключить встроенный мониторинг, отправляющий данные в ES
       XPACK_MONITORING_ENABLED: "false"
@@ -18,7 +18,7 @@ services:
 
   # Обратите внимание: не стоит использовать для ELK тот же ES, который задействован для полнотекстового поиска в вашем сервисе
   elasticsearch:
-    image: elasticsearch:8.10.2
+    image: elasticsearch:8.12.0
     environment:
       # Указываем ES запуститься в одном экземпляре
       - discovery.type=single-node
@@ -30,7 +30,7 @@ services:
       - ./elastic/data:/usr/share/elasticsearch/data
 
   kibana:
-    image: kibana:8.10.2
+    image: kibana:8.12.0
     ports:
       - "5601:5601"
     depends_on:
@@ -50,7 +50,7 @@ services:
       - ./flask_app/src:/code
 
   nginx:
-    image: nginx:1.19.2
+    image: nginx:1.25.3-alpine
     volumes:
       - ./nginx/config/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/config/conf.d:/etc/nginx/conf.d:ro

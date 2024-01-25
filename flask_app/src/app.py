@@ -1,6 +1,8 @@
 import logging
 import os
 import random
+import logstash
+
 
 import sentry_sdk
 from flask import Flask, request
@@ -17,8 +19,17 @@ sentry_sdk.init(
     integrations=[FlaskIntegration()],
 )
 
+class RequestIdFilter(logging.Filter):
+    def filter(self, record):
+        record.request_id = request.headers.get('X-Request-Id')
+        return True
+
 app = Flask(__name__)
-logging.basicConfig(level=logging.INFO)
+app.logger = logging.getLogger(__name__)
+app.logger.setLevel(logging.INFO)
+app.logger.addFilter(RequestIdFilter())
+logstash_handler = logstash.LogstashHandler(host='logstash', port=5044, proto='UDP')
+app.logger.addHandler(logstash_handler)
 
 
 @app.before_request
