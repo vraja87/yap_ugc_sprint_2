@@ -44,6 +44,6 @@ class ClickHouseLoader:
             INSERT INTO shard.{self.config.views_table_name}
             (user_id, film_id, number_seconds_viewing, record_time) VALUES"""
 
-        return self.client.execute(
+        return self.client.execute(  # type: ignore[no-any-return]
             query, ((row.user_id, row.film_id, row.number_seconds_viewing, row.record_time) for row in data)
         )

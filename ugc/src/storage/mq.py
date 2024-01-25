@@ -1,3 +1,5 @@
+from typing import Type
+
 from aiokafka import AIOKafkaProducer
 from abc import ABC, abstractmethod
 
@@ -25,5 +27,5 @@ class KafkaProducer(AIOKafkaProducer, QueueProducer):
 queue_producer = KafkaProducer
 
 
-async def get_producer() -> KafkaProducer:
+async def get_producer() -> Type[KafkaProducer]:
     return queue_producer
