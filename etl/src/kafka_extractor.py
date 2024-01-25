@@ -38,8 +38,7 @@ class KafkaExtractor:
             topic_partition = TopicPartition(partition.topic, partition.partition)
 
             # Get the offset for the given timestamp with delta to next entrie
-            offsets = self.consumer.offsets_for_times({topic_partition: from_timestamp + 1} )
-
+            offsets = self.consumer.offsets_for_times({topic_partition: from_timestamp + 1})
 
             if offsets and topic_partition in offsets and offsets[topic_partition] is not None:
                 offset = offsets[topic_partition].offset

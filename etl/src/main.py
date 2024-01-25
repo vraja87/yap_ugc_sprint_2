@@ -29,7 +29,7 @@ class ETL:
     def get_last_processed_timestamp(self) -> int:
         redis_client = redis.StrictRedis(host=config.redis.host, port=config.redis.port, db=config.redis.db)
         last_processed_timestamp = redis_client.get("last_processed_timestamp")
-        return int(last_processed_timestamp) if last_processed_timestamp else 0
+        return int(last_processed_timestamp) if last_processed_timestamp else 0  # type: ignore[arg-type]
 
     def start(self) -> None:
         try:

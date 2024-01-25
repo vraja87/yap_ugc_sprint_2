@@ -13,7 +13,7 @@ from faker import Faker
 class DcConnectVertica:
     """Manages the connection to a Vertica database."""
 
-    def __init__(self, dsl_dict: dict = None) -> None:
+    def __init__(self, dsl_dict: dict | None = None) -> None:
         self.dsl_dict = dsl_dict
         self.connection, self.cursor = self.connect()
 

@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from loguru import logger
 
@@ -97,7 +98,7 @@ class LoggerAdapter:
         else:
             self.logger.debug(message, **kwargs)
 
-    def __getattr__(self, name: str) -> str:
+    def __getattr__(self, name: str) -> Any:
         """
         Retrieves an attribute from the logger object.
 

@@ -14,7 +14,7 @@ def configure_tracer() -> None:
     resource = Resource.create(attributes={"service.name": settings.project_name})
     tracer = TracerProvider(resource=resource)
     trace.set_tracer_provider(tracer)
-    trace.get_tracer_provider().add_span_processor(
+    trace.get_tracer_provider().add_span_processor(  # type: ignore[attr-defined]
         BatchSpanProcessor(
             JaegerExporter(
                 agent_host_name=settings.jaeger_host,
@@ -23,4 +23,6 @@ def configure_tracer() -> None:
         )
     )
     # Чтобы видеть трейсы в консоли
-    trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
+    trace.get_tracer_provider().add_span_processor(  # type: ignore[attr-defined]
+        BatchSpanProcessor(ConsoleSpanExporter())
+    )
