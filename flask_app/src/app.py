@@ -1,7 +1,7 @@
 import logging
 import os
 import random
-import logstash
+from logstash import LogstashHandler
 
 
 import sentry_sdk
@@ -28,7 +28,7 @@ app = Flask(__name__)
 app.logger = logging.getLogger(__name__)
 app.logger.setLevel(logging.INFO)
 app.logger.addFilter(RequestIdFilter())
-logstash_handler = logstash.LogstashHandler(host='logstash', port=5044, version=1)
+logstash_handler = LogstashHandler(host='logstash', port=5044, version=0)
 app.logger.addHandler(logstash_handler)
 
 
