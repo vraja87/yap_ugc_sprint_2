@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
+from uuid import UUID
 
+import bson
 import motor.motor_asyncio
 from bson.objectid import ObjectId
 
@@ -35,7 +38,8 @@ class MongoDBConnector(NoSqlDb):
         self.db = self.client[db_name]
         self.collection = self.db[collection_name]
 
-    async def insert_record(self, record: dict):
+    async def insert_record(self, record: dict) -> str:
+        """returns str(ObjectId)"""
         result = await self.collection.insert_one(record)
         return str(result.inserted_id)
 
@@ -49,7 +53,7 @@ class MongoDBConnector(NoSqlDb):
 
     async def update_one(self, filter_: dict, data_: dict):
         """
-        filter_: {'user_id': ..., 'movie_id': ...}
+        filter_: {'user_id': ..., 'film_id': ...}
 
         `user_id` needed to be in filter because it's a 'hashed field'. or you will get an error.
         """
@@ -70,13 +74,25 @@ class MongoDBConnector(NoSqlDb):
 
 
 class UserInteractions(MongoDBConnector):
-    async def get_average_movie_rating(self, film_id: str):
-        """
-        Calculates the average score for a movie based on its film_id.
-        """
+    """
+    типы событий: like_film, like_review, bookmark, rating, review
+
+    user_id: Идентификатор пользователя.
+    film_id: Идентификатор фильма.
+    timestamp: Временная метка взаимодействия.
+    event_type: Тип взаимодействия (например, лайк фильму, рецензия, закладка и т.д.).
+
+    rating: Оценка фильма (10 для лайка, 0 для дизлайка).
+
+    review_id: Уникальный идентификатор рецензии, - здесь это не UUID а ObjectId строки рецензии в базе.
+    text: Текст рецензии.
+    """
+
+    async def get_average_film_rating(self, film_id: UUID):
+        """Средняя пользовательская оценка фильма"""
         pipeline = [
-            {"$match": {"film_id": film_id}},
-            {"$group": {"_id": "$film_id", "average_rating": {"$avg": "$range"}}}
+            {"$match": {"film_id": bson.Binary.from_uuid(film_id)}},
+            {"$group": {"_id": "$film_id", "average_rating": {"$avg": "$rating"}}}
         ]
         result = await self.collection.aggregate(pipeline).to_list(length=1)
         if result:
@@ -84,29 +100,93 @@ class UserInteractions(MongoDBConnector):
         else:
             return None
 
-    async def get_bookmarked_movies_by_user(self, user_id: str):
+    async def get_bookmarked_films_by_user(self, user_id: UUID):
+        """Список закладок"""
         pipeline = [
-            {"$match": {"user_id": user_id, "event_type": "bookmark"}},
-            {"$group": {"_id": "$movie_id"}}
+            {"$match": {"user_id": bson.Binary.from_uuid(user_id), "event_type": "bookmark"}},
+            {"$group": {"_id": "$film_id"}}
         ]
         result = await self.collection.aggregate(pipeline).to_list(length=None)
-        return [doc['_id'] for doc in result]
+        return [UUID(bytes=doc['_id']) for doc in result]
 
-    async def get_likes_dislikes_count(self, movie_id: str):
+    async def get_likes_dislikes_count(self, film_id: UUID):
+        """Количество лайков или дизлайков у определённого фильма"""
         pipeline = [
-            {"$match": {"movie_id": movie_id, "event_type": {"$in": ["like", "dislike"]}}},
+            {"$match": {"film_id": bson.Binary.from_uuid(film_id), "event_type": {"$in": ["like", "dislike"]}}},
             {"$group": {"_id": "$event_type", "count": {"$sum": 1}}}
         ]
         result = await self.collection.aggregate(pipeline).to_list(length=None)
         return {doc['_id']: doc['count'] for doc in result}
 
-    async def get_liked_movies_by_user(self, user_id: str):
+    async def get_liked_films_by_user(self, user_id: UUID):
+        """Список понравившихся пользователю фильмов (список лайков пользователя)"""
         pipeline = [
-            {"$match": {"user_id": user_id, "event_type": "like"}},
-            {"$group": {"_id": "$movie_id"}}
+            {"$match": {"user_id": bson.Binary.from_uuid(user_id), "event_type": "like"}},
+            {"$group": {"_id": "$film_id"}}
         ]
         result = await self.collection.aggregate(pipeline).to_list(length=None)
         return [doc['_id'] for doc in result]
+
+    async def insert_film_like_dislike(self, user_id: UUID, film_id: UUID, is_like: bool = True):
+        """
+        Inserts an entry about the user's like/dislike of the film.
+        """
+        record = {
+            "user_id": bson.Binary.from_uuid(user_id),
+            "film_id": bson.Binary.from_uuid(film_id),
+            "timestamp": datetime.now(),
+            "event_type": "like_film",
+            "rating": 10 if is_like else 0,
+        }
+        return await self.insert_record(record)
+
+    async def insert_review_text(self, user_id: UUID, film_id: UUID, review_text: str):
+        record = {
+            "event_type": "review",
+            "user_id": bson.Binary.from_uuid(user_id),
+            "film_id": bson.Binary.from_uuid(film_id),
+            "review_text": review_text,
+            "timestamp": datetime.now()
+        }
+        return await self.insert_record(record)
+
+    async def insert_film_bookmark(self, user_id: UUID, film_id: UUID):
+        """
+        Inserts an entry about the user bookmarking the film.
+        """
+        record = {
+            "user_id": bson.Binary.from_uuid(user_id),
+            "film_id": bson.Binary.from_uuid(film_id),
+            "timestamp": datetime.now(),
+            "event_type": "bookmark"
+        }
+        return await self.insert_record(record)
+
+    async def insert_review_like_dislike(self, user_id: UUID, review_id: ObjectId, is_like: bool = True):
+        """
+        Inserts an entry about the user's like/dislike of the review.
+        """
+        record = {
+            "user_id": bson.Binary.from_uuid(user_id),
+            "review_id": review_id,
+            "timestamp": datetime.now(),
+            "event_type": "like_review",
+            "rating": 10 if is_like else 0
+        }
+        return await self.insert_record(record)
+
+    async def insert_rating(self, user_id: UUID, film_id: UUID, rating: int):
+        """
+        Inserts an entry about the user's rating of the film.
+        """
+        record = {
+            "user_id": bson.Binary.from_uuid(user_id),
+            "film_id": bson.Binary.from_uuid(film_id),
+            "timestamp": datetime.now(),
+            "event_type": "rating",
+            "rating": rating
+        }
+        return await self.insert_record(record)
 
 
 mongo_connector = MongoDBConnector(

@@ -28,3 +28,5 @@ sleep 10
 # Creating collection and sharing for it
 docker exec -it mongos1 mongosh --eval 'db.createCollection("movies_ugc.ugc_events")'
 docker exec -it mongos1 mongosh --eval 'sh.shardCollection("movies_ugc.ugc_events", {"user_id": "hashed"})'
+# Проблема общей коллекции,- не у всех событий может быть film_id. Зато у всех есть user_id.
+#docker exec -it mongos1 mongosh --eval 'sh.shardCollection("movies_ugc.ugc_events", {"film_id": "hashed"})'
