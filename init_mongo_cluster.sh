@@ -28,6 +28,3 @@ sleep 10
 # Creating collection and sharing for it
 docker exec -it mongos1 mongosh --eval 'db.createCollection("movies_ugc.ugc_events")'
 docker exec -it mongos1 mongosh --eval 'sh.shardCollection("movies_ugc.ugc_events", {"user_id": "hashed"})'
-
-# create user. admin.
-docker exec -it mongocfg1 mongosh admin --eval 'db.createUser({user: process.env.MONGO_INITDB_ROOT_USERNAME, pwd: process.env.MONGO_INITDB_ROOT_PASSWORD, roles: [{role: "userAdminAnyDatabase", db: "admin"}]})'

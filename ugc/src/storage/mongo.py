@@ -1,8 +1,8 @@
-import asyncio
 from abc import ABC, abstractmethod
-from bson.objectid import ObjectId
 
 import motor.motor_asyncio
+from bson.objectid import ObjectId
+
 from ugc.src.core.config import mongo_settings
 
 
@@ -29,9 +29,9 @@ class NoSqlDb(ABC):
 
 
 class MongoDBConnector(NoSqlDb):
-    def __init__(self, db_name: str, collection_name: str, username: str, password: str, hosts: str):
-        connection_uri = f"mongodb://{username}:{password}@{hosts}"
-        self.client = motor.motor_asyncio.AsyncIOMotorClient(connection_uri, authSource='admin')
+    def __init__(self, db_name: str, collection_name: str, hosts: str):
+        connection_uri = f"mongodb://{hosts}"
+        self.client = motor.motor_asyncio.AsyncIOMotorClient(connection_uri)
         self.db = self.client[db_name]
         self.collection = self.db[collection_name]
 
@@ -112,10 +112,9 @@ class UserInteractions(MongoDBConnector):
 mongo_connector = MongoDBConnector(
     db_name=mongo_settings.db,
     collection_name=mongo_settings.collection,
-    username=mongo_settings.username,
-    password=mongo_settings.password,
     hosts=mongo_settings.hosts
 )
+
 
 async def get_mongo_connector() -> MongoDBConnector:
     return mongo_connector

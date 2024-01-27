@@ -2,9 +2,6 @@ version: '3.5'
 
 x-mongo-common: &mongo-common
   image: mongo
-  environment:
-    MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-    MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
   volumes:
     - /etc/localtime:/etc/localtime:ro
   networks:
