@@ -50,6 +50,7 @@ app = FastAPI(
 
 @app.get("/api/v1/health")
 async def healthcheck():
+    logging.info("healthcheck ok")
     return {"status": "ok"}
 
 
