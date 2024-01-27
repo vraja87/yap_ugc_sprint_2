@@ -16,3 +16,5 @@ opentelemetry-instrumentation-fastapi==0.42b0
 
 # oauth
 async_fastapi_jwt_auth==0.5.1
+
+motor==3.3.2
