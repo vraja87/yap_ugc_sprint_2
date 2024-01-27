@@ -1,5 +1,4 @@
 import os
-
 from pathlib import Path
 
 from pydantic import BaseSettings
@@ -25,5 +24,14 @@ class AuthjwtSettings(BaseSettings):
     authjwt_cookie_csrf_protect: bool = False
 
 
+class MongoSettings(BaseSettings):
+    """Mongo uri must contain both services mongos1 and mongos2"""
+    collection: str = "ugc_events"
+    db: str = "movies_ugc"
+    hosts: str = os.getenv("MONGO_URI_HOSTS", "localhost:27019,localhost:27020")
+    # hosts: str = os.getenv("MONGO_URI_HOSTS", "mongos1:27019,mongos2:27020")
+
+
 settings = Settings()
 auth_jwt_settings = AuthjwtSettings()
+mongo_settings = MongoSettings()
