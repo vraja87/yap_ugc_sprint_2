@@ -6,7 +6,7 @@ import bson
 import motor.motor_asyncio
 from bson.objectid import ObjectId
 
-from ugc.src.core.config import mongo_settings
+from core.config import mongo_settings
 
 
 class NoSqlDb(ABC):
