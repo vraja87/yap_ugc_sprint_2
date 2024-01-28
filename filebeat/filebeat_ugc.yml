@@ -1,0 +1,16 @@
+filebeat.inputs:
+- type: filestream
+  enabled: true
+  paths:
+    - /var/log/ugc/*.json
+  multiline.pattern: '^\['
+  multiline.negate: true
+  multiline.match: after
+  tags: [ "ugc" ]
+  json:
+    keys_under_root: true
+    add_error_key: true
+
+output.logstash:
+  enabled: true
+  hosts: ["logstash:5044"]
