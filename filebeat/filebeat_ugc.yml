@@ -6,6 +6,8 @@ filebeat.inputs:
   multiline.pattern: '^\['
   multiline.negate: true
   multiline.match: after
+  fields:
+    service_name: ugc
   tags: [ "ugc" ]
   json:
     keys_under_root: true
