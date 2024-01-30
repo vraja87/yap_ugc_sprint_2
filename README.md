@@ -5,6 +5,7 @@ https://github.com/telemachor/ugc_sprint_2
 Пока так, для запуска более ничего не надо:
 
 cp .env.sample .env
+
 docker compose up
 
-Просить понять и простить.
+Просим понять и простить.
