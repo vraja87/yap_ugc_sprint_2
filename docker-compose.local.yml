@@ -1,6 +1,9 @@
 version: '3.7'
 
 services:
+  ugc:
+    ports:
+      - "8000:8000"
   etl:
     volumes:
       - "./etl/src:${APP_DIR}"

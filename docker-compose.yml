@@ -142,13 +142,15 @@ services:
       args:
         DOCKER_BUILDKIT: 1
         APP_DIR: ${APP_DIR}
-    ports:
-      - "8000:8000"
+    expose:
+      - 8000
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/api/v1/health"]
       interval: 5s
       timeout: 3s
       retries: 3
+    volumes:
+      - ugc_logs:/var/log/ugc/
     depends_on:
       kafka-node1:
         condition: service_healthy
@@ -211,14 +213,22 @@ services:
     volumes:
       - ./flask-app/src:/code
 
-  filebeat:
+  filebeat-nginx:
     image: elastic/filebeat:8.12.0
     volumes:
       - nginx_logs:/var/log/nginx:ro
-      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - ./filebeat/filebeat_nginx.yml:/usr/share/filebeat/filebeat.yml
     depends_on:
-      - flask-app
       - nginx
+      - logstash
+
+  filebeat-ugc:
+    image: elastic/filebeat:8.12.0
+    volumes:
+      - ugc_logs:/var/log/ugc/:ro
+      - ./filebeat/filebeat_ugc.yml:/usr/share/filebeat/filebeat.yml
+    depends_on:
+      - ugc
       - logstash
 
 volumes:
@@ -229,3 +239,4 @@ volumes:
   cluster_kafka_node3:
   redis_data:
   nginx_logs:
+  ugc_logs:

@@ -1,7 +1,11 @@
 filebeat.inputs:
-- type: log
+- type: filestream
+  enabled: true
   paths:
     - /var/log/nginx/*.json
+  tags: [ "nginx" ]
+  fields:
+    service_name: nginx
   json:
     keys_under_root: true
     add_error_key: true

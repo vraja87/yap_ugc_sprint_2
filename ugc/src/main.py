@@ -20,6 +20,7 @@ from storage import mq
 from storage.mq import KafkaProducer, QueueProducer, get_producer
 
 from models.kafka import ViewMessage, EventMessage
+from core.logger import logger
 
 
 @AuthJWT.load_config
@@ -50,7 +51,7 @@ app = FastAPI(
 
 @app.get("/api/v1/health")
 async def healthcheck():
-    logging.info("healthcheck ok")
+    logger.info("healthcheck ok")
     return {"status": "ok"}
 
 

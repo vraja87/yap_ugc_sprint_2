@@ -25,8 +25,7 @@ class RequestIdFilter(logging.Filter):
 
 app = Flask(__name__)
 
-logstash_handler = LogstashHandler(host="logstash", port=5044, version=0)
-app.logger.addHandler(logstash_handler)
+logstash_handler = LogstashHandler(host="logstash", port=5044, version=0, tags=["flask"])
 app.logger.setLevel(logging.INFO)
 app.logger.addFilter(RequestIdFilter())
 app.logger.addHandler(logstash_handler)
@@ -42,5 +41,5 @@ def before_request() -> None:
 @app.route("/")
 def index() -> str:
     result = random.randint(1, 50)
-    app.logger.info(f"Пользователю досталось число {result}")
+    app.logger.info(f"Пользователю досталось число {result}", extra={'service_name': 'flask','request_id': request.headers.get("X-Request-Id")})
     return f"Ваше число {result}!"
