@@ -13,7 +13,7 @@ from faker import Faker
 current_path = os.path.dirname(os.path.abspath(__file__))
 parent_path = os.path.join(current_path, '../../ugc/src')  # from service root
 sys.path.append(parent_path)
-from storage.mongo import get_user_interactions
+from storage.mongo import get_user_interactions  # noqa: E402
 
 fake = Faker()
 
@@ -348,11 +348,7 @@ async def check_fresh_like(film_ids: list[UUID], user_ids: list[UUID], user_inte
 async def print_time(collection, collection_name):
     min_time = min(collection).total_seconds() * 1000
     max_time = max(collection).total_seconds() * 1000
-    avg_time = (
-            sum(collection, timedelta()).total_seconds()
-            * 1000
-            / len(collection)
-    )
+    avg_time = sum(collection, timedelta()).total_seconds() * 1000 / len(collection)
     print(collection_name)
     print(f' - min `{min_time:.2f}` ms max `{max_time:.2f}` ms avg `{avg_time:.2f}` ms')
 
