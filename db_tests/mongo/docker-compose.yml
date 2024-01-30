@@ -1,0 +1,121 @@
+version: '3.5'
+
+x-mongo-common: &mongo-common
+  image: mongo
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+  networks:
+    - ugc_network
+
+
+services:
+  mongors1n1:
+    container_name: mongors1n1
+    <<: *mongo-common
+    command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
+    ports:
+      - 27017:27017
+    expose:
+      - "27017"
+
+  mongors1n2:
+    container_name: mongors1n2
+    <<: *mongo-common
+    command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
+    ports:
+      - 27027:27017
+    expose:
+      - "27027"
+
+  mongors1n3:
+    container_name: mongors1n3
+    <<: *mongo-common
+    command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
+    ports:
+      - 27037:27017
+    expose:
+      - "27017"
+
+  mongors2n1:
+    container_name: mongors2n1
+    <<: *mongo-common
+    command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
+    ports:
+      - 27047:27017
+    expose:
+      - "27017"
+
+  mongors2n2:
+    container_name: mongors2n2
+    <<: *mongo-common
+    command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
+    ports:
+      - 27057:27017
+    expose:
+      - "27017"
+
+  mongors2n3:
+    container_name: mongors2n3
+    <<: *mongo-common
+    command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
+    ports:
+      - 27067:27017
+    expose:
+      - "27017"
+
+  mongocfg1:
+    container_name: mongocfg1
+    <<: *mongo-common
+    command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+
+  mongocfg2:
+    container_name: mongocfg2
+    <<: *mongo-common
+    command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+
+  mongocfg3:
+    container_name: mongocfg3
+    <<: *mongo-common
+    command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+
+  mongos1:
+    container_name: mongos1
+    <<: *mongo-common
+    depends_on:
+      - mongocfg1
+      - mongocfg2
+    command: mongos --configdb mongors1conf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 --port 27017 --bind_ip_all
+    ports:
+      - 27019:27017
+    expose:
+      - "27017"
+
+  mongos2:
+    container_name: mongos2
+    <<: *mongo-common
+    depends_on:
+      - mongocfg1
+      - mongocfg2
+    command: mongos --configdb mongors1conf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 --port 27017 --bind_ip_all
+    ports:
+      - 27020:27017
+    expose:
+      - "27017"
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: mydatabase
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    ports:
+      - "5432:5432"
+
+networks:
+  ugc_network:

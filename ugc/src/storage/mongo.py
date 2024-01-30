@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 import bson
-import motor.motor_asyncio
+from motor.motor_asyncio import AsyncIOMotorClient
 from bson.objectid import ObjectId
 
 from core.config import mongo_settings
@@ -34,7 +35,7 @@ class NoSqlDb(ABC):
 class MongoDBConnector(NoSqlDb):
     def __init__(self, db_name: str, collection_name: str, hosts: str):
         connection_uri = f"mongodb://{hosts}"
-        self.client = motor.motor_asyncio.AsyncIOMotorClient(connection_uri)
+        self.client: AsyncIOMotorClient = AsyncIOMotorClient(connection_uri)  # type: ignore
         self.db = self.client[db_name]
         self.collection = self.db[collection_name]
 
@@ -90,7 +91,7 @@ class UserInteractions(MongoDBConnector):
 
     async def get_average_film_rating(self, film_id: UUID):
         """Средняя пользовательская оценка фильма"""
-        pipeline = [
+        pipeline: list[dict[str, Any]] = [
             {"$match": {"film_id": bson.Binary.from_uuid(film_id)}},
             {"$group": {"_id": "$film_id", "average_rating": {"$avg": "$rating"}}}
         ]
@@ -102,7 +103,7 @@ class UserInteractions(MongoDBConnector):
 
     async def get_bookmarked_films_by_user(self, user_id: UUID):
         """Список закладок"""
-        pipeline = [
+        pipeline: list[dict[str, Any]] = [
             {"$match": {"user_id": bson.Binary.from_uuid(user_id), "event_type": "bookmark"}},
             {"$group": {"_id": "$film_id"}}
         ]
@@ -111,8 +112,8 @@ class UserInteractions(MongoDBConnector):
 
     async def get_likes_dislikes_count(self, film_id: UUID):
         """Количество лайков или дизлайков у определённого фильма"""
-        pipeline = [
-            {"$match": {"film_id": bson.Binary.from_uuid(film_id), "event_type": {"$in": ["like", "dislike"]}}},
+        pipeline: list[dict[str, Any]] = [
+            {"$match": {"film_id": bson.Binary.from_uuid(film_id), "event_type": "like_film"}},
             {"$group": {"_id": "$event_type", "count": {"$sum": 1}}}
         ]
         result = await self.collection.aggregate(pipeline).to_list(length=None)
@@ -120,12 +121,12 @@ class UserInteractions(MongoDBConnector):
 
     async def get_liked_films_by_user(self, user_id: UUID):
         """Список понравившихся пользователю фильмов (список лайков пользователя)"""
-        pipeline = [
-            {"$match": {"user_id": bson.Binary.from_uuid(user_id), "event_type": "like"}},
+        pipeline: list[dict[str, Any]] = [
+            {"$match": {"user_id": bson.Binary.from_uuid(user_id), "event_type": "like_film"}},
             {"$group": {"_id": "$film_id"}}
         ]
         result = await self.collection.aggregate(pipeline).to_list(length=None)
-        return [doc['_id'] for doc in result]
+        return [UUID(bytes=doc['_id']) for doc in result]
 
     async def insert_film_like_dislike(self, user_id: UUID, film_id: UUID, is_like: bool = True):
         """
@@ -198,3 +199,13 @@ mongo_connector = MongoDBConnector(
 
 async def get_mongo_connector() -> MongoDBConnector:
     return mongo_connector
+
+user_interactions = UserInteractions(
+    db_name=mongo_settings.db,
+    collection_name=mongo_settings.collection,
+    hosts=mongo_settings.hosts
+)
+
+
+async def get_user_interactions() -> UserInteractions:
+    return user_interactions
