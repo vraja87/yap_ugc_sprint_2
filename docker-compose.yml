@@ -231,6 +231,13 @@ services:
       - ugc
       - logstash
 
+  mongodb:
+    image: mongo:6-jammy
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb:/data/db
+
 volumes:
   cluster_clickhouse_node1:
   cluster_clickhouse_node2:
@@ -240,3 +247,4 @@ volumes:
   redis_data:
   nginx_logs:
   ugc_logs:
+  mongodb:

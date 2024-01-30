@@ -1,5 +1,3 @@
-import logging
-
 from http import HTTPStatus
 
 from async_fastapi_jwt_auth import AuthJWT
@@ -8,19 +6,18 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import ORJSONResponse
-from fastapi import Depends
 
 from opentelemetry import trace
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-from core.config import auth_jwt_settings, settings
+from core.config import auth_jwt_settings, settings, mongo_settings
 from services.tracer import configure_tracer
 
-from storage import mq
-from storage.mq import KafkaProducer, QueueProducer, get_producer
-
-from models.kafka import ViewMessage, EventMessage
+from storage import mq, nosql
+from storage.mq import KafkaProducer
 from core.logger import logger
+
+from api.v1 import events, interactions
 
 
 @AuthJWT.load_config
@@ -32,10 +29,14 @@ def get_config():
 async def lifespan(application: FastAPI):
     # init kafka
     mq.queue_producer = KafkaProducer(bootstrap_servers='kafka-node1:9092')
+    nosql.nosql = nosql.MongoDBConnector(db_name=mongo_settings.db,
+                                         collection_name=mongo_settings.collection,
+                                         hosts=mongo_settings.hosts)
     await mq.queue_producer.start()
 
     yield
 
+    nosql.nosql.close()
     await mq.queue_producer.stop()
 
 
@@ -43,7 +44,7 @@ app = FastAPI(
     title=settings.project_name,
     docs_url="/api/v1/openapi",
     openapi_url="/api/v1/openapi.json",
-    root_path="/",
+    root_path="/api/",
     default_response_class=ORJSONResponse,
     lifespan=lifespan,
 )
@@ -102,38 +103,5 @@ if settings.jaeger_enabled:
     FastAPIInstrumentor.instrument_app(app, excluded_urls=",".join(trace_excluded_endpoints))
 
 
-@app.post(
-    "/api/write_user_view",
-    summary="Load view messages into MQ",
-    status_code=HTTPStatus.CREATED,
-    description="Sends views info in warehouse/mq",
-)
-async def load_view_in_mq(
-    request: Request,
-    msg: ViewMessage,
-    queue_producer: QueueProducer = Depends(get_producer),
-):
-    await queue_producer.send_view(
-        value=msg.value,
-        film_id=msg.film_id,
-        user_id=request.state.user_id,
-    )
-
-
-@app.post(
-    "/api/write_user_event",
-    summary="Load event messages into MQ",
-    status_code=HTTPStatus.CREATED,
-    description="Sends events info in warehouse/mq",
-)
-async def load_event_in_mq(
-    request: Request,
-    msg: EventMessage,
-    queue_producer: QueueProducer = Depends(get_producer),
-):
-    await queue_producer.send_event(
-        value=msg.value,
-        film_id=msg.film_id,
-        user_id=request.state.user_id,
-        event_type=msg.event_type,
-    )
+app.include_router(events.router, prefix="/api/v1/events")
+app.include_router(interactions.router, prefix="/api/v1/interactions")
