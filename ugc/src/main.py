@@ -10,7 +10,7 @@ from fastapi.responses import ORJSONResponse
 from opentelemetry import trace
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-from core.config import auth_jwt_settings, settings, mongo_settings
+from core.config import auth_jwt_settings, settings, mongo_settings, kafka_settings
 from services.tracer import configure_tracer
 
 from storage import mq, nosql
@@ -28,7 +28,7 @@ def get_config():
 @asynccontextmanager
 async def lifespan(application: FastAPI):
     # init kafka
-    mq.queue_producer = KafkaProducer(bootstrap_servers='kafka-node1:9092')
+    mq.queue_producer = KafkaProducer(bootstrap_servers=kafka_settings.bootstrap_servers)
     nosql.nosql = nosql.MongoDBConnector(db_name=mongo_settings.db,
                                          collection_name=mongo_settings.collection,
                                          hosts=mongo_settings.hosts)
