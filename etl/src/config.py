@@ -23,6 +23,8 @@ class ClickHouseSettings(BaseSettings):
     port: int = 9000
     cluster: str = Field("company_cluster", env="CLICKHOUSE_CLUSTER")  # type: ignore[call-arg]
     database: str = Field("shard", env="CLICKHOUSE_DATABASE")  # type: ignore[call-arg]
+    user: str = Field("admin", env="CLICKHOUSE_USER")  # type: ignore[call-arg]
+    password: str = Field("qwerty", env="CLICKHOUSE_PASSWORD")  # type: ignore[call-arg]
 
     views_table_name: str = VIEWS_TOPIC
     custom_events_table_name: str = EVENTS_TOPIC
