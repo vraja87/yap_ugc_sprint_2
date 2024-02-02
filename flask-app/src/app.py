@@ -41,5 +41,10 @@ def before_request() -> None:
 @app.route("/")
 def index() -> str:
     result = random.randint(1, 50)
-    app.logger.info(f"Пользователю досталось число {result}", extra={'service_name': 'flask','request_id': request.headers.get("X-Request-Id")})
+    app.logger.info(
+        f"Пользователю досталось число {result}",
+        extra={
+            'service_name': 'flask',
+            'request_id': request.headers.get("X-Request-Id")
+        })
     return f"Ваше число {result}!"
