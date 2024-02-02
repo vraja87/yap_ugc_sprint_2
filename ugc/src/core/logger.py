@@ -13,9 +13,11 @@ logger.add("server.log", format=fmt, rotation="10MB", compression="zip", enqueue
 
 LOG_FORMAT_JSON = '{"level":"{level}", "message":"{message}", "request_id": 123}'
 
+
 def serialize(record):
     subset = {"timestamp": record["time"].timestamp(), "message": record["message"]}
     return json.dumps(subset)
+
 
 def formatter(record):
     record["extra"]["serialized"] = serialize(record)

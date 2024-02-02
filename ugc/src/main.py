@@ -31,10 +31,10 @@ def get_config():
 @asynccontextmanager
 async def lifespan(application: FastAPI):
     # init kafka
-    mq.queue_producer = KafkaProducer(bootstrap_servers='kafka-node1:9092')
-    nosql.nosql = nosql.MongoDBConnector(db_name=mongo_settings.db,
-                                         collection_name=mongo_settings.collection,
-                                         hosts=mongo_settings.hosts)
+    mq.queue_producer = KafkaProducer(bootstrap_servers="kafka-node1:9092")
+    nosql.nosql = nosql.MongoDBConnector(
+        db_name=mongo_settings.db, collection_name=mongo_settings.collection, hosts=mongo_settings.hosts
+    )
     await mq.queue_producer.start()
 
     yield
@@ -67,11 +67,12 @@ async def auth_user(request: Request, call_next):
     if request.method == "POST":
         async with httpx.AsyncClient() as client:
             auth = await client.get(
-                f'''{os.getenv("AUTH_API_URL", "http://127.0.0.1/auth/api/v1/")}users/my_user''',
+                f"""{os.getenv("AUTH_API_URL", "http://127.0.0.1/auth/api/v1/")}users/my_user""",
                 headers={
                     "X-Request-Id": request.headers.get("X-Request-Id"),
                     "Cookie": request.headers.get("Cookie"),
-                })
+                },
+            )
         if auth.status_code != HTTPStatus.OK:
             raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="Token invalid!")
     auth = AuthJWT(request)
@@ -82,13 +83,9 @@ async def auth_user(request: Request, call_next):
                 await auth.jwt_required()
                 request.state.user_id = await auth.get_jwt_subject()
             except AuthJWTException:
-                return ORJSONResponse(
-                    status_code=HTTPStatus.UNAUTHORIZED, content={"detail": "Token invalid!"}
-                )
+                return ORJSONResponse(status_code=HTTPStatus.UNAUTHORIZED, content={"detail": "Token invalid!"})
         else:
-            return ORJSONResponse(
-                status_code=HTTPStatus.UNAUTHORIZED, content={"detail": "Token not provided!"}
-            )
+            return ORJSONResponse(status_code=HTTPStatus.UNAUTHORIZED, content={"detail": "Token not provided!"})
     response = await call_next(request)
     return response
 

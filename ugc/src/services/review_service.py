@@ -22,15 +22,18 @@ class ReviewService:
     review_id: Уникальный идентификатор рецензии, - здесь это не UUID а ObjectId строки рецензии в базе.
     text: Текст рецензии.
     """
+
     def __init__(self, nosql: MongoDBConnector):
         self.nosql = nosql
 
     async def insert_review_text(self, user_id: UUID, film_id: UUID, review_text: str):
-        event = await self.nosql.find_one({
-            "event_type": "review",
-            "user_id": bson.Binary.from_uuid(user_id),
-            "film_id": bson.Binary.from_uuid(film_id),
-        })
+        event = await self.nosql.find_one(
+            {
+                "event_type": "review",
+                "user_id": bson.Binary.from_uuid(user_id),
+                "film_id": bson.Binary.from_uuid(film_id),
+            }
+        )
         if event:
             return None
         else:
@@ -39,7 +42,7 @@ class ReviewService:
                 "user_id": bson.Binary.from_uuid(user_id),
                 "film_id": bson.Binary.from_uuid(film_id),
                 "review_text": review_text,
-                "timestamp": datetime.now()
+                "timestamp": datetime.now(),
             }
             return await self.nosql.insert_record(record)
 
@@ -49,7 +52,7 @@ class ReviewService:
             "user_id": bson.Binary.from_uuid(user_id),
             "film_id": bson.Binary.from_uuid(film_id),
             "review_text": review_text,
-            "timestamp": datetime.now()
+            "timestamp": datetime.now(),
         }
         filter = {
             "event_type": "review",
@@ -63,7 +66,7 @@ class ReviewService:
         record = {
             "user_id": bson.Binary.from_uuid(user_id),
             "film_id": bson.Binary.from_uuid(film_id),
-            "event_type": "review"
+            "event_type": "review",
         }
         return await self.nosql.delete(record)
 

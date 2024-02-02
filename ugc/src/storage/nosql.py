@@ -56,10 +56,10 @@ class MongoDBConnector(NoSqlDb):
 
         `user_id` needed to be in filter because it's a 'hashed field'. or you will get an error.
         """
-        if 'user_id' not in filter_:
+        if "user_id" not in filter_:
             raise ValueError("The filter_ must include 'user_id' for sharding without errors")
 
-        update = {'$set': data_}
+        update = {"$set": data_}
         result = await self.collection.update_one(filter_, update, upsert=True)
         return str(result.modified_count)
 
