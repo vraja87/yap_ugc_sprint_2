@@ -4,7 +4,6 @@ from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
-from api.decorators import login_fullcheck_required
 from services.bookmark_service import BookmarkService, get_bookmark_service
 from services.like_service import LikeService, get_like_service
 from services.review_service import ReviewService, get_review_service
@@ -35,7 +34,6 @@ async def user_bookmarks(
     summary="Set bookmark",
     status_code=HTTPStatus.CREATED,
     description="Adding film to favorites",
-    dependencies=[Depends(login_fullcheck_required)],
 )
 async def set_bookmark(
     request: Request,
@@ -53,7 +51,6 @@ async def set_bookmark(
     summary="Remove bookmark",
     status_code=HTTPStatus.OK,
     description="Remove film from favorites",
-    dependencies=[Depends(login_fullcheck_required)],
 )
 async def remove_bookmark(
     request: Request,
@@ -78,7 +75,6 @@ async def add_review(
     review: Review,
     request: Request,
     nosql: ReviewService = Depends(get_review_service),
-    dependencies=[Depends(login_fullcheck_required)],
 ):
     return JSONResponse(await nosql.insert_review_text(
         UUID(request.state.user_id),
@@ -91,7 +87,6 @@ async def add_review(
     "/remove_review",
     summary="Remove review",
     status_code=HTTPStatus.OK,
-    dependencies=[Depends(login_fullcheck_required)],
 )
 async def remove_review(
     film_id: UUID,
@@ -108,7 +103,6 @@ async def remove_review(
     "/update_review",
     summary="Update review",
     status_code=HTTPStatus.OK,
-    dependencies=[Depends(login_fullcheck_required)],
 )
 async def update_review(
     review: Review,
@@ -155,7 +149,6 @@ async def film_likes(
     "/rate_review",
     summary="Like/dislike review",
     status_code=HTTPStatus.CREATED,
-    dependencies=[Depends(login_fullcheck_required)],
 )
 async def rate_review(
     review_id: str,
@@ -174,7 +167,6 @@ async def rate_review(
     "/rate_film",
     summary="Like/dislike film",
     status_code=HTTPStatus.CREATED,
-    dependencies=[Depends(login_fullcheck_required)],
 )
 async def rate_film(
     film_id: UUID,
@@ -193,7 +185,6 @@ async def rate_film(
     "/estimate_film",
     summary="Set my film rating",
     status_code=HTTPStatus.CREATED,
-    dependencies=[Depends(login_fullcheck_required)],
 )
 async def estimate_film(
     rating: Rating,
@@ -211,7 +202,6 @@ async def estimate_film(
     "/remove_film_like",
     summary="Remove film like",
     status_code=HTTPStatus.OK,
-    dependencies=[Depends(login_fullcheck_required)],
 )
 async def remove_film_like(
     film_id: UUID,
@@ -228,7 +218,6 @@ async def remove_film_like(
     "/remove_review_like",
     summary="Remove review like",
     status_code=HTTPStatus.OK,
-    dependencies=[Depends(login_fullcheck_required)],
 )
 async def remove_review_like(
     review_id: str,

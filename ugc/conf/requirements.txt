@@ -6,7 +6,7 @@ aiokafka==0.10.0
 orjson==3.9.10
 pydantic==1.10.13
 uvloop==0.19.0 ; sys_platform != "win32" and implementation_name == "cpython"
-requests==2.31.0
+httpx==0.26.0
 loguru==0.7.2
 
 # jaeger
