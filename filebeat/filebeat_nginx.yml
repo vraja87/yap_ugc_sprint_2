@@ -3,12 +3,20 @@ filebeat.inputs:
   enabled: true
   paths:
     - /var/log/nginx/*.json
-  tags: [ "nginx" ]
+  tags: [ "nginx", "access" ]
   fields:
     service_name: nginx
   json:
     keys_under_root: true
     add_error_key: true
+
+- type: filestream
+  enabled: true
+  paths:
+    - /var/log/nginx/*.txt
+  tags: [ "nginx", "error" ]
+  fields:
+    service_name: nginx
 
 output.logstash:
   enabled: true
