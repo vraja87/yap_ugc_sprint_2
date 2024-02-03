@@ -25,6 +25,7 @@ class LikeService:
     review_id: Уникальный идентификатор рецензии, - здесь это не UUID а ObjectId строки рецензии в базе.
     text: Текст рецензии.
     """
+
     def __init__(self, nosql: MongoDBConnector):
         self.nosql = nosql
 
@@ -32,37 +33,43 @@ class LikeService:
         """Количество лайков и дизлайков у определённой рецензии"""
         result = await self.nosql.aggregate(
             [
-                {"$match": {
-                    "review_id": ObjectId(review_id),
-                    "event_type": {"$in": ["like_review", "dislike_review"]}
-                }},
-                {"$group": {"_id": "$event_type", "count": {"$sum": 1}}}
+                {
+                    "$match": {
+                        "review_id": ObjectId(review_id),
+                        "event_type": {"$in": ["like_review", "dislike_review"]},
+                    }
+                },
+                {"$group": {"_id": "$event_type", "count": {"$sum": 1}}},
             ]
         )
-        return {doc['_id']: doc['count'] for doc in result}
+        return {doc["_id"]: doc["count"] for doc in result}
 
     async def get_film_likes_dislikes_count(self, film_id: UUID):
         """Количество лайков и дизлайков у определённого фильма"""
         result = await self.nosql.aggregate(
             [
-                {"$match": {
-                    "film_id": bson.Binary.from_uuid(film_id),
-                    "event_type": {"$in": ["like_film", "dislike_film"]}
-                }},
-                {"$group": {"_id": "$event_type", "count": {"$sum": 1}}}
+                {
+                    "$match": {
+                        "film_id": bson.Binary.from_uuid(film_id),
+                        "event_type": {"$in": ["like_film", "dislike_film"]},
+                    }
+                },
+                {"$group": {"_id": "$event_type", "count": {"$sum": 1}}},
             ]
         )
-        return {doc['_id']: doc['count'] for doc in result}
+        return {doc["_id"]: doc["count"] for doc in result}
 
     async def insert_film_like_dislike(self, user_id: UUID, film_id: UUID, is_like: bool = True):
         """
         Inserts an entry about the user's like/dislike of the film.
         """
-        event = await self.nosql.find_one({
-            "user_id": bson.Binary.from_uuid(user_id),
-            "film_id": bson.Binary.from_uuid(film_id),
-            "event_type": {"$in": ["like_film", "dislike_film"]}
-        })
+        event = await self.nosql.find_one(
+            {
+                "user_id": bson.Binary.from_uuid(user_id),
+                "film_id": bson.Binary.from_uuid(film_id),
+                "event_type": {"$in": ["like_film", "dislike_film"]},
+            }
+        )
         if event:
             return None
         else:
@@ -78,11 +85,13 @@ class LikeService:
         """
         Inserts an entry about the user's like/dislike of the review.
         """
-        event = await self.nosql.find_one({
-            "user_id": bson.Binary.from_uuid(user_id),
-            "review_id": ObjectId(review_id),
-            "event_type": {"$in": ["like_review", "dislike_review"]}
-        })
+        event = await self.nosql.find_one(
+            {
+                "user_id": bson.Binary.from_uuid(user_id),
+                "review_id": ObjectId(review_id),
+                "event_type": {"$in": ["like_review", "dislike_review"]},
+            }
+        )
         if event:
             return None
         else:
@@ -90,7 +99,7 @@ class LikeService:
                 "user_id": bson.Binary.from_uuid(user_id),
                 "review_id": ObjectId(review_id),
                 "timestamp": datetime.now(),
-                "event_type": "like_review" if is_like else "dislike_review"
+                "event_type": "like_review" if is_like else "dislike_review",
             }
             return await self.nosql.insert_record(record)
 
@@ -98,17 +107,19 @@ class LikeService:
         """
         Inserts an entry about the user's like/dislike of the review.
         """
-        await self.nosql.delete({
-            "user_id": bson.Binary.from_uuid(user_id),
-            "film_id": bson.Binary.from_uuid(film_id),
-            "event_type": "rating"
-        })
+        await self.nosql.delete(
+            {
+                "user_id": bson.Binary.from_uuid(user_id),
+                "film_id": bson.Binary.from_uuid(film_id),
+                "event_type": "rating",
+            }
+        )
         record = {
             "user_id": bson.Binary.from_uuid(user_id),
             "film_id": bson.Binary.from_uuid(film_id),
             "timestamp": datetime.now(),
             "event_type": "rating",
-            "rating": rating
+            "rating": rating,
         }
         return await self.nosql.insert_record(record)
 
@@ -119,7 +130,7 @@ class LikeService:
         record = {
             "user_id": bson.Binary.from_uuid(user_id),
             "film_id": bson.Binary.from_uuid(film_id),
-            "event_type": {"$in": ["like_film", "dislike_film"]}
+            "event_type": {"$in": ["like_film", "dislike_film"]},
         }
         return await self.nosql.delete(record)
 
@@ -130,7 +141,7 @@ class LikeService:
         record = {
             "user_id": bson.Binary.from_uuid(user_id),
             "review_id": ObjectId(review_id),
-            "event_type": {"$in": ["like_review", "dislike_review"]}
+            "event_type": {"$in": ["like_review", "dislike_review"]},
         }
         return await self.nosql.delete(record)
 
@@ -139,7 +150,7 @@ class LikeService:
         result = await self.nosql.aggregate(
             [
                 {"$match": {"film_id": bson.Binary.from_uuid(film_id)}},
-                {"$group": {"_id": "$film_id", "average_rating": {"$avg": "$rating"}}}
+                {"$group": {"_id": "$film_id", "average_rating": {"$avg": "$rating"}}},
             ]
         )
         if result:

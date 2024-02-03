@@ -9,18 +9,18 @@ class QueueProducer(ABC):
     async def send_view(self, *args, **kwargs):
         pass
 
+    @abstractmethod
+    async def send_event(self, *args, **kwargs):
+        pass
+
 
 class KafkaProducer(AIOKafkaProducer, QueueProducer):
     async def send_view(self, user_id, film_id, value):
-        await self.send(topic="views",
-                        value=str.encode(value),
-                        key=str.encode(f"{user_id}:{film_id}"))
+        await self.send(topic="views", value=str.encode(value), key=str.encode(f"{user_id}:{film_id}"))
         return True
 
     async def send_event(self, user_id, film_id, value, event_type):
-        await self.send(topic="events",
-                        value=str.encode(value),
-                        key=str.encode(f"{user_id}:{film_id}:{event_type}"))
+        await self.send(topic="events", value=str.encode(value), key=str.encode(f"{user_id}:{film_id}:{event_type}"))
         return True
 
 

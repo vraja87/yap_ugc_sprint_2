@@ -21,6 +21,7 @@ x-clickhouse-base: &clickhouse-base
 
 services:
   nginx:
+    profiles: ["prod"]
     image: nginx:1.25.3-alpine
     volumes:
       - nginx_logs:/var/log/nginx/
@@ -31,6 +32,7 @@ services:
 
   zookeeper:
     <<: *base
+    profiles: ["prod"]
     image: zookeeper:3.9.1
     expose:
       - 2181
@@ -40,6 +42,7 @@ services:
 
   clickhouse-node1:
     <<: *clickhouse-base
+    profiles: ["prod"]
     ports:
       - "8123:8123"
       - "9000:9000"
@@ -48,6 +51,7 @@ services:
 
   clickhouse-node2:
     <<: *clickhouse-base
+    profiles: ["prod"]
     ports:
       - "8124:8123"
       - "9001:9000"
@@ -100,6 +104,7 @@ services:
 
   kafka-ui:
     <<: *base
+    profiles: ["prod"]
     image: provectuslabs/kafka-ui:v0.7.1
     ports:
       - "8080:8080"
@@ -113,6 +118,7 @@ services:
 
   etl:
     <<: *base
+    profiles: ["prod"]
     build:
       args:
         APP_DIR: ${APP_DIR}
@@ -136,6 +142,7 @@ services:
   ugc:
     <<: *base
     image: ugc:latest
+    profiles: ["prod"]
     build:
       dockerfile: ./docker/Dockerfile
       context: ./ugc
@@ -166,6 +173,7 @@ services:
 
   # Обратите внимание: не стоит использовать для ELK тот же ES, который задействован для полнотекстового поиска в вашем сервисе
   elasticsearch:
+    profiles: ["prod"]
     image: elasticsearch:8.12.0
     environment:
       # Указываем ES запуститься в одном экземпляре
@@ -178,6 +186,7 @@ services:
       - ./elastic/data:/usr/share/elasticsearch/data
 
   logstash:
+    profiles: ["prod"]
     image: logstash:8.12.0
     environment:
       # Так как сейчас вы хотите запустить logstash без Elasticsearch, необходимо отключить встроенный мониторинг, отправляющий данные в ES
@@ -194,6 +203,7 @@ services:
     command: logstash -f /config/logstash.conf
 
   kibana:
+    profiles: ["prod"]
     image: kibana:8.12.0
     ports:
       - "5601:5601"
@@ -202,18 +212,8 @@ services:
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
 
-  flask-app:
-    env_file:
-      - .env
-    build:
-      context: flask-app
-      dockerfile: ./docker/Dockerfile
-    ports:
-      - "5005:5000"
-    volumes:
-      - ./flask-app/src:/code
-
   filebeat-nginx:
+    profiles: ["prod"]
     image: elastic/filebeat:8.12.0
     volumes:
       - nginx_logs:/var/log/nginx:ro
@@ -223,6 +223,7 @@ services:
       - logstash
 
   filebeat-ugc:
+    profiles: ["prod"]
     image: elastic/filebeat:8.12.0
     volumes:
       - ugc_logs:/var/log/ugc/:ro
@@ -232,11 +233,35 @@ services:
       - logstash
 
   mongodb:
+    profiles: ["prod"]
     image: mongo:6-jammy
     ports:
       - '27017:27017'
     volumes:
       - mongodb:/data/db
+
+# tests
+  mongodb-test:
+    image: mongo:6-jammy
+    profiles: ["tests"]
+    ports:
+      - '27017:27017'
+
+  ugc-tests:
+    <<: *base
+    restart: "no"
+    image: ugc:latest
+    profiles: ["tests"]
+    build:
+      dockerfile: ./docker/Dockerfile
+      context: ./ugc
+      args:
+        DOCKER_BUILDKIT: 1
+        APP_DIR: ${APP_DIR}
+    depends_on:
+      kafka-node1:
+        condition: service_healthy
+
 
 volumes:
   cluster_clickhouse_node1:

@@ -26,6 +26,7 @@ class AuthjwtSettings(BaseSettings):
 
 class MongoSettings(BaseSettings):
     """Mongo uri must contain both services mongos1 and mongos2"""
+
     collection: str = "ugc_events"
     db: str = "movies_ugc"
     hosts: str = os.getenv("MONGO_URI_HOSTS", "localhost:27019,localhost:27020")

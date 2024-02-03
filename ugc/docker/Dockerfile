@@ -36,11 +36,15 @@ ARG APP_DIR
 WORKDIR ${APP_DIR}
 
 COPY ./conf/gunicorn-asgi.conf.py /gunicorn-asgi.conf.py
+COPY ./docker/entrypoint.sh /entrypoint.sh
 
+RUN chmod +x '/entrypoint.sh' \
+  && groupadd -r web && useradd -r -g web web \
+  && chown web:web -R ${APP_DIR}
 
 USER web
 EXPOSE 8000
-CMD ["uvicorn", "--reload", "--host", "0.0.0.0", "--port", "8000", "main:app"]
+ENTRYPOINT ["/entrypoint.sh"]
 
 ### prod build
 FROM base AS prod

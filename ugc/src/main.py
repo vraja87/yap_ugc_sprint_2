@@ -1,10 +1,13 @@
+import os
+import httpx
+
 from http import HTTPStatus
 
 from async_fastapi_jwt_auth import AuthJWT
 from async_fastapi_jwt_auth.exceptions import AuthJWTException
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, status, HTTPException
 from fastapi.responses import ORJSONResponse
 
 from opentelemetry import trace
@@ -27,16 +30,17 @@ def get_config():
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    # init kafka
+
+    # init
     mq.queue_producer = KafkaProducer(bootstrap_servers=kafka_settings.bootstrap_servers)
-    nosql.nosql = nosql.MongoDBConnector(db_name=mongo_settings.db,
-                                         collection_name=mongo_settings.collection,
-                                         hosts=mongo_settings.hosts)
+    nosql.nosql = nosql.MongoDBConnector(
+        db_name=mongo_settings.db, collection_name=mongo_settings.collection, hosts=mongo_settings.hosts
+    )
     await mq.queue_producer.start()
 
     yield
 
-    nosql.nosql.close()
+    nosql.nosql.client.close()
     await mq.queue_producer.stop()
 
 
@@ -60,6 +64,34 @@ trace_excluded_endpoints = [app.url_path_for("healthcheck")]
 
 
 @app.middleware("http")
+async def auth_user(request: Request, call_next):
+    if request.method == "POST":
+        async with httpx.AsyncClient() as client:
+            auth = await client.get(
+                f"""{os.getenv("AUTH_API_URL", "http://127.0.0.1/auth/api/v1/")}users/my_user""",
+                headers={
+                    "X-Request-Id": request.headers.get("X-Request-Id"),
+                    "Cookie": request.headers.get("Cookie"),
+                },
+            )
+        if auth.status_code != HTTPStatus.OK:
+            return ORJSONResponse(status_code=HTTPStatus.UNAUTHORIZED, content={"detail": "Token invalid!"})
+    auth = AuthJWT(request)
+    if request.scope["path"] != "/api/v1/health":
+        token = request.headers.get("Cookie")
+        if token and "access_token" in token:
+            try:
+                await auth.jwt_required()
+                request.state.user_id = await auth.get_jwt_subject()
+            except AuthJWTException:
+                return ORJSONResponse(status_code=HTTPStatus.UNAUTHORIZED, content={"detail": "Token invalid!"})
+        else:
+            return ORJSONResponse(status_code=HTTPStatus.UNAUTHORIZED, content={"detail": "Token not provided!"})
+    response = await call_next(request)
+    return response
+
+
+@app.middleware("http")
 async def trace_request(request: Request, call_next):
     if settings.jaeger_enabled and request.scope["path"] not in trace_excluded_endpoints:
         request_id = request.headers.get("X-Request-Id")
@@ -75,27 +107,6 @@ async def trace_request(request: Request, call_next):
     else:
         response = await call_next(request)
         return response
-
-
-@app.middleware("http")
-async def auth_user(request: Request, call_next):
-    auth = AuthJWT(request)
-    if request.scope["path"] != "/api/v1/health":
-        token = request.headers.get("Cookie")
-        if token and "access_token" in token:
-            try:
-                await auth.jwt_required()
-                request.state.user_id = await auth.get_jwt_subject()
-            except AuthJWTException:
-                return ORJSONResponse(
-                    status_code=HTTPStatus.UNAUTHORIZED, content={"detail": "Token invalid!"}
-                )
-        else:
-            return ORJSONResponse(
-                status_code=HTTPStatus.UNAUTHORIZED, content={"detail": "Token not provided!"}
-            )
-    response = await call_next(request)
-    return response
 
 
 if settings.jaeger_enabled:
