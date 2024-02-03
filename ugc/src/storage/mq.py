@@ -9,6 +9,10 @@ class QueueProducer(ABC):
     async def send_view(self, *args, **kwargs):
         pass
 
+    @abstractmethod
+    async def send_event(self, *args, **kwargs):
+        pass
+
 
 class KafkaProducer(AIOKafkaProducer, QueueProducer):
     async def send_view(self, user_id, film_id, value):

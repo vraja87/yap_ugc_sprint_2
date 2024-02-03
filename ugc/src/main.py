@@ -30,7 +30,7 @@ def get_config():
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    # init kafka
+    # init
     mq.queue_producer = KafkaProducer(bootstrap_servers="kafka-node1:9092")
     nosql.nosql = nosql.MongoDBConnector(
         db_name=mongo_settings.db, collection_name=mongo_settings.collection, hosts=mongo_settings.hosts
@@ -74,7 +74,7 @@ async def auth_user(request: Request, call_next):
                 },
             )
         if auth.status_code != HTTPStatus.OK:
-            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="Token invalid!")
+            return ORJSONResponse(status_code=HTTPStatus.UNAUTHORIZED, content={"detail": "Token invalid!"})
     auth = AuthJWT(request)
     if request.scope["path"] != "/api/v1/health":
         token = request.headers.get("Cookie")

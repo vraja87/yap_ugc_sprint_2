@@ -32,7 +32,7 @@ class NoSqlDb(ABC):
 
 class MongoDBConnector(NoSqlDb):
     def __init__(self, db_name: str, collection_name: str, hosts: str):
-        connection_uri = f"mongodb://{hosts}"
+        connection_uri = hosts
         self.client = AsyncIOMotorClient(connection_uri)
         self.db = self.client[db_name]
         self.collection = self.db[collection_name]
