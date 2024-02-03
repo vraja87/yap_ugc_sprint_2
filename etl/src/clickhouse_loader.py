@@ -15,7 +15,12 @@ class ClickHouseLoader:
 
     @backoff.on_exception(backoff.expo, Exception)
     def connect(self) -> Client:
-        return Client(host=self.config.host, port=self.config.port)
+        return Client(
+            host=self.config.host,
+            port=self.config.port,
+            user=self.config.user,
+            password=self.config.password
+        )
 
     @backoff.on_exception(backoff.expo, Exception)
     def init_database_and_tables(self) -> None:

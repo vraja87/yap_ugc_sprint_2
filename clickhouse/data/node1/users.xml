@@ -20,7 +20,7 @@
             <quota>default</quota>
         </default>
         <admin>
-            <password>123</password>
+            <password_sha256_hex>65e84be33532fb784c48129675f9eff3a682b27168c0ea744b2cf58ee02337c5</password_sha256_hex>
             <profile>default</profile>
             <networks>
                 <ip>::/0</ip>

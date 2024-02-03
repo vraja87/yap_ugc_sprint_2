@@ -33,6 +33,11 @@ class MongoSettings(BaseSettings):
     # hosts: str = os.getenv("MONGO_URI_HOSTS", "mongos1:27019,mongos2:27020")
 
 
+class KafkaSettings(BaseSettings):
+    bootstrap_servers: str = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka-node1:9092")
+
+
 settings = Settings()
 auth_jwt_settings = AuthjwtSettings()
 mongo_settings = MongoSettings()
+kafka_settings = KafkaSettings()
