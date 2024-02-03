@@ -23,7 +23,6 @@ async def fastapi_app() -> FastAPI:
     mq.queue_producer = mq.KafkaProducer(bootstrap_servers="kafka-node1:9092")
     nosql.nosql = nosql.MongoDBConnector(
         db_name=mongo_settings.db, collection_name=mongo_settings.collection, hosts="mongodb://mongodb-test:27017"
-
     )
     collection = nosql.nosql.db[mongo_settings.collection]
     collection.delete_many({})
@@ -45,10 +44,8 @@ async def access_token():
     auth = requests.post(
         f"{os.getenv('AUTH_API_URL')}auth/login",
         headers={"X-Request-Id": "123"},
-        json={
-            "email": os.getenv("AUTH_TEST_USER_EMAIL"),
-            "password": os.getenv("AUTH_TEST_USER_PASSWORD")
-        })
+        json={"email": os.getenv("AUTH_TEST_USER_EMAIL"), "password": os.getenv("AUTH_TEST_USER_PASSWORD")},
+    )
     access_token = auth.json()["access_token"]
     refresh_token = auth.json()["refresh_token"]
 
@@ -58,7 +55,8 @@ async def access_token():
         f"{os.getenv('AUTH_API_URL')}auth/logout",
         headers={
             "X-Request-Id": "123",
-            "Cookie": f"access_token={access_token}; HttpOnly; Path=/, refresh_token={refresh_token}; HttpOnly; Path=/,"
-        })
+            "Cookie": f"access_token={access_token}; HttpOnly; Path=/, refresh_token={refresh_token}; HttpOnly; Path=/,",
+        },
+    )
     if not logout.status_code != 200:
         raise Exception("Tokens was not banned!")

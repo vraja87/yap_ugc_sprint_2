@@ -14,10 +14,8 @@ class TestLike:
         for id in self.film_id:
             response = await async_client.post(
                 "api/v1/interactions/add_review",
-                headers={
-                    "X-Request-Id": "123",
-                    "Cookie": f"access_token={access_token}; HttpOnly; Path=/"},
-                json={"film_id": id, "review_text": str(uuid.uuid4())}
+                headers={"X-Request-Id": "123", "Cookie": f"access_token={access_token}; HttpOnly; Path=/"},
+                json={"film_id": id, "review_text": str(uuid.uuid4())},
             )
             assert response.status_code == 200
             assert bool(response.json()) is True
@@ -27,10 +25,8 @@ class TestLike:
         for id in self.film_id:
             response = await async_client.post(
                 "api/v1/interactions/update_review",
-                headers={
-                    "X-Request-Id": "123",
-                    "Cookie": f"access_token={access_token}; HttpOnly; Path=/"},
-                json={"film_id": id, "review_text": str(uuid.uuid4())}
+                headers={"X-Request-Id": "123", "Cookie": f"access_token={access_token}; HttpOnly; Path=/"},
+                json={"film_id": id, "review_text": str(uuid.uuid4())},
             )
             assert response.status_code == 200
             assert bool(response.json()) is True
@@ -40,10 +36,8 @@ class TestLike:
         for id in self.film_id:
             response = await async_client.post(
                 "api/v1/interactions/remove_review",
-                headers={
-                    "X-Request-Id": "123",
-                    "Cookie": f"access_token={access_token}; HttpOnly; Path=/"},
-                params={"film_id": id}
+                headers={"X-Request-Id": "123", "Cookie": f"access_token={access_token}; HttpOnly; Path=/"},
+                params={"film_id": id},
             )
             assert response.status_code == 200
             assert response.json() == 1
